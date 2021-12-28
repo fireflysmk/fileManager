@@ -7,8 +7,8 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="fileManager" />
         <module name="cloud-dec-2-2021" />
+        <module name="fileManager" />
       </profile>
     </annotationProcessing>
   </component>
