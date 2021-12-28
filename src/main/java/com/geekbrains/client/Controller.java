@@ -1,203 +1,117 @@
 package com.geekbrains.client;
 
-import java.io.*;
+import java.io.IOException;
 import java.net.Socket;
 import java.net.URL;
-import java.util.Arrays;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 
+import com.geekbrains.model.AbstractMessage;
+
+import com.geekbrains.model.FileMessage;
+import com.geekbrains.model.FileRequest;
+import com.geekbrains.model.FilesList;
+import io.netty.handler.codec.serialization.ObjectDecoderInputStream;
+import io.netty.handler.codec.serialization.ObjectEncoderOutputStream;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 
 public class Controller implements Initializable {
 
-    private DataInputStream is;
-    private DataOutputStream os;
-    private Socket socket;
-    public TextField input;
-    public TextField serverPathField;
-    public TextField сlientPathField;
-    public TextArea output;
-    public TextArea fileListLeft;
-    public TextArea fileListRight;
+    public ListView<String> clientFiles;
+    public ListView<String> serverFiles;
+    private Path baseDir;
+    private ObjectDecoderInputStream is;
+    private ObjectEncoderOutputStream os;
+    @FXML
+    private TextField сlientPathField;
+    @FXML
+    private TextField serverPathField;
 
-    private String clientPath = "E:\\Java\\2021\\geekbrains\\filemanager\\1\\fileManager\\storage\\Client1";
-    private String serverPath = "E:\\Java\\2021\\geekbrains\\filemanager\\1\\fileManager\\storage\\ServerCommonStorage";
-
-    public void sendMessage(ActionEvent actionEvent) throws IOException {
-        //input.clear();
-        String command = input.getText();
-        System.out.println("command:" + command);
-        if (command.contains("sendFile")) {
-            String fileName = command.split(" ")[1];
-            System.out.println("command: sendFile + fileName: " + fileName);
-            if (!"".equals(fileName)) {
-                sendFile(fileName);
-            } else {
-                output.appendText("incorrect command, please input correct file Name");
-            }
-        }
-        else {
-            System.out.println("send some command");
-            os.writeUTF(command);
-            input.clear();
-        }
-    }
-/*
-    public void sendServerPath(ActionEvent actionEvent) throws IOException {
-        fileListLeft.clear();
-        os.writeUTF("ServerPath:" + inputServerPath.getText());
-        System.out.println("os.writeUTF(\"ServerPath:" + inputServerPath.getText());
-    }
- */
-
-    public void getServerPath(ActionEvent actionEvent) throws IOException {
-        serverPathField.clear();
-        serverPathField.appendText(this.serverPath);
-        fileListLeft.clear();
-
+    private void read() {
         try {
-            System.out.println(serverPath);
+            while (true) {
 
-            File dir = new File(serverPath);
-            File[] arrFiles = dir.listFiles();
-            List<File> lst = Arrays.asList(arrFiles);
-            if (lst.size() == 0) {
-                fileListLeft.appendText("ServerList:" + "(empty folder)" + "\n");
-            }
-            else {
-                for (File filAndDirList : lst) {
-                    System.out.println(filAndDirList.getName());
-                    fileListLeft.appendText(filAndDirList.getName() + "\n");
+                AbstractMessage msg = (AbstractMessage) is.readObject();
+                switch (msg.getMessageType()) {
+                    case FILE:
+                        FileMessage fileMessage = (FileMessage) msg;
+                        Files.write(
+                                baseDir.resolve(fileMessage.getFileName()),
+                                fileMessage.getBytes()
+                        );
+                        Platform.runLater(() -> fillClientView(getFileNames()));
+                        break;
+                    case FILES_LIST:
+                        FilesList files = (FilesList) msg;
+                        Platform.runLater(() -> fillServerView(files.getFiles()));
+                        break;
                 }
-
             }
-
-        } catch (NullPointerException e) {
-            os.writeUTF("Path Not Found, please enter a valid path");
-            // break;
-        }
-
-
-    }
-
-    public void getClientPath(ActionEvent actionEvent) throws IOException {
-    //    this.clientPath = inputClientPath.getText();
-        сlientPathField.clear();
-        сlientPathField.appendText(this.clientPath);
-        fileListRight.clear();
-       // os.writeUTF("ClientPath:" + inputClientPath.getText());
-        //command = ServerPath:E:\Java\2021\geekbrains\filemanager\1\fileManager
-        try {
-            System.out.println(clientPath);
-
-            File dir = new File(clientPath);
-            File[] arrFiles = dir.listFiles();
-            List<File> lst = Arrays.asList(arrFiles);
-            if (lst.size() == 0) {
-                fileListRight.appendText("ClientList:" + "(empty folder)" + "\n");
-            }
-            else {
-                for (File filAndDirList : lst) {
-                    System.out.println(filAndDirList.getName());
-                    fileListRight.appendText(filAndDirList.getName() + "\n");
-                }
-
-            }
-
-        } catch (NullPointerException e) {
-            os.writeUTF("Path Not Found, please enter a valid path");
-            // break;
-        }
-
-
-    }
-    public void sendFile(String fileName) {
-        try {
-            File file = new File(clientPath + "\\" + fileName);
-            System.out.println(clientPath + "\\" + fileName);
-            long length = file.length();
-            byte[] bytes = new byte[16 * 1024];
-
-            InputStream in = new FileInputStream(file);
-            os.writeUTF("sendFileFromClient " + fileName);
-            int count;
-            while ((count = in.read(bytes)) > 0) {
-                os.write(bytes, 0, count);
-            }
-        } catch (NullPointerException e) {
-            output.appendText("there`s no file: " + fileName + " in path: " + clientPath + "\n");
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void sendFile(ActionEvent actionEvent) throws IOException {
-        input.clear();
-        output.appendText("input file Name, for copy" + "\n");
-        //String fileName = input.getText();
-        String fileName = "";
-
-        while ("".equals(input.getText())) {
-            //waiting input
-        }
-        System.out.println("input file name: " + fileName);
-        if (!"".equals(fileName)) {
-            try {
-                File file = new File(clientPath + "\\" + fileName);
-                System.out.println(clientPath + "\\" + fileName);
-                long length = file.length();
-                byte[] bytes = new byte[16 * 1024];
-
-                InputStream in = new FileInputStream(file);
-                os.writeUTF("switchOnByteMode");
-                System.out.println("after switchOnByteMode .....");
-                int count;
-                while ((count = in.read(bytes)) > 0) {
-                    os.write(bytes, 0, count);
-                }
-
-            } catch (NullPointerException e) {
-                output.appendText("there`s no file: " + fileName + " in path: " + clientPath + "\n");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-
+    private void fillServerView(List<String> list) {
+        serverFiles.getItems().clear();
+        serverFiles.getItems().addAll(list);
     }
 
-    private void read() {
+    private void fillClientView(List<String> list) {
+        clientFiles.getItems().clear();
+        clientFiles.getItems().addAll(list);
+    }
+
+    private List<FileInfo> getClientFiles() throws IOException {
+        return Files.list(baseDir)
+                .map(FileInfo::new)
+                .collect(Collectors.toList());
+    }
+
+    private List<String> getFileNames() {
         try {
-            while (true) {
-                String message = is.readUTF();
-                String path = message.substring(message.indexOf(":") + 1) + "\n";
-                if (message.contains("ServerList")) {
-                  //  fileListLeft.clear();
-                    fileListLeft.appendText(path);
-                } else if (message.contains("ClientList")){
-                    fileListRight.appendText(path);;
-                } else {
-                    output.appendText(message + "\n");
-                }
-
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+            return Files.list(baseDir)
+                    .map(p -> p.getFileName().toString())
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            return new ArrayList<>();
         }
     }
-
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         try {
-            //Socket
-            socket = new Socket("localhost", 8188);
-            is = new DataInputStream(socket.getInputStream());
-            os = new DataOutputStream(socket.getOutputStream());
+            //baseDir = Paths.get(System.getProperty("user.home"));
+            baseDir = Paths.get(System.getProperty("user.dir")).resolve("storage").resolve("Client1");
+            clientFiles.getItems().addAll(getFileNames());
+            System.out.println("baseDir is: " + baseDir);
+            сlientPathField.appendText(String.valueOf(baseDir));
+
+            clientFiles.setOnMouseClicked(e -> {
+                if (e.getClickCount() == 2) {
+                    String file = clientFiles.getSelectionModel().getSelectedItem();
+                    Path path = baseDir.resolve(file);
+                    if (Files.isDirectory(path)) {
+                        baseDir = path;
+                        fillClientView(getFileNames());
+                    }
+                }
+            });
+
+            Socket socket = new Socket("localhost", 8189);
+            os = new ObjectEncoderOutputStream(socket.getOutputStream());
+            is = new ObjectDecoderInputStream(socket.getInputStream());
             Thread thread = new Thread(this::read);
             thread.setDaemon(true);
             thread.start();
@@ -206,6 +120,32 @@ public class Controller implements Initializable {
         }
     }
 
-    public void serverPathField(ActionEvent actionEvent) {
+    public void upload(ActionEvent actionEvent) throws IOException {
+        String file = clientFiles.getSelectionModel().getSelectedItem();
+        Path filePath = baseDir.resolve(file);
+        os.writeObject(new FileMessage(filePath));
+    }
+
+    public void download(ActionEvent actionEvent) throws IOException {
+        String file = serverFiles.getSelectionModel().getSelectedItem();
+        os.writeObject(new FileRequest(file));
+    }
+
+    public TextField input;
+    public TextArea output;
+
+    public void sendMessage(ActionEvent actionEvent) throws IOException {
+        os.writeUTF(input.getText());
+    }
+
+    public void sendFile(ActionEvent actionEvent) throws IOException {
+    }
+
+    public void getServerPath(ActionEvent actionEvent) throws IOException  {
+
+    }
+
+    public void getClientPath(ActionEvent actionEvent) throws IOException {
+        Platform.runLater(() -> fillClientView(getFileNames()));
     }
 }
