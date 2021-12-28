@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="716.0" prefWidth="790.0" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.geekbrains.client.Controller">
+   <TextArea fx:id="output" layoutX="20.0" layoutY="582.0" prefHeight="94.0" prefWidth="752.0" />
+   <TextField fx:id="input" layoutX="21.0" layoutY="482.0" onAction="#sendMessage" prefHeight="49.0" prefWidth="752.0" />
+   <AnchorPane layoutX="17.0" layoutY="14.0" prefHeight="437.0" prefWidth="752.0">
+      <children>
+         <Button layoutX="374.0" layoutY="136.0" mnemonicParsing="false" onAction="#upload" text="&lt;--" />
+         <Label layoutX="3.0" layoutY="15.0" text="ServerPath" />
+         <Label layoutX="417.0" layoutY="15.0" prefHeight="17.0" prefWidth="57.0" text="ClientPath" />
+         <TextField fx:id="serverPathField" layoutY="34.0"  prefHeight="25.0" prefWidth="359.0" />
+         <Button fx:id="refreshClientPath" layoutX="730.0" layoutY="34.0" mnemonicParsing="false" onAction="#getClientPath" text="⭯" />
+         <TextField fx:id="сlientPathField" layoutX="416.0" layoutY="34.0" prefHeight="25.0" prefWidth="314.0" />
+
+         <!--<TextArea fx:id="fileListLeft" layoutY="59.0" prefHeight="362.0" prefWidth="359.0" />-->
+         <ListView fx:id="serverFiles" layoutY="59.0" prefHeight="362.0" prefWidth="359.0"/>
+         <!--<TextArea fx:id="fileListRight" layoutX="415.0" layoutY="59.0" prefHeight="362.0" prefWidth="314.0" />-->
+         <ListView fx:id="clientFiles" layoutX="415.0" layoutY="59.0" prefHeight="362.0" prefWidth="314.0"/>
+
+        <Button layoutX="374.0" layoutY="186.0" mnemonicParsing="false" onAction="#download" text="--&gt;" />
+        <Button fx:id="refreshServerPath" layoutX="361.0" layoutY="34.0" mnemonicParsing="false" onAction="#getServerPath" text="⭯" />
+     </children></AnchorPane>
+  <Label layoutX="23.0" layoutY="461.0" text="Console" />
+  <Label layoutX="23.0" layoutY="559.0" text="Server Output" />
+
+</AnchorPane>
